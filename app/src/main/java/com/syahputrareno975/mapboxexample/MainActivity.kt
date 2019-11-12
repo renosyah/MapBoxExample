@@ -51,6 +51,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var getCurrentLocation : ImageView
     lateinit var setCurrentLocation  :ImageView
 
+    lateinit var controller : () -> Unit
+
     var isInTrackingMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +71,18 @@ class MainActivity : AppCompatActivity() {
         mapView = findViewById(R.id.mapView)
         mapView.getMapAsync(onMapCallback)
 
+        SimpleTask({ controller = it },{
+            countdown.text = "Count : ${it}"
+        },{
+            Toast.makeText(context,"task finish",Toast.LENGTH_SHORT).show()
+        }).execute()
+
+        countdown.setOnClickListener {
+            if (::controller.isInitialized){
+                controller.invoke()
+            }
+        }
+
     }
 
     val onMapCallback = object : OnMapReadyCallback {
@@ -82,14 +96,19 @@ class MainActivity : AppCompatActivity() {
 
             mapboxMap.addOnMapClickListener(object : MapboxMap.OnMapClickListener {
                 override fun onMapClick(point: LatLng): Boolean {
-                    mapboxMap.clear()
-                    mapboxMap.addMarker(createSimpleMarker(point))
+
+                    // do something
+                    // when user click map
+
                     return true
                 }
             })
 
             mapboxMap.setOnMarkerClickListener(object : MapboxMap.OnMarkerClickListener {
                 override fun onMarkerClick(marker: Marker): Boolean {
+
+                    // do something
+                    // when user click marker
 
                     Toast.makeText(context,"${marker.title}",Toast.LENGTH_SHORT).show()
                     AlertDialog.Builder(context)
@@ -99,7 +118,6 @@ class MainActivity : AppCompatActivity() {
                         .create()
                         .show()
 
-                    // mapboxMap.removeMarker(marker)
 
                     return true
                 }
@@ -147,7 +165,11 @@ class MainActivity : AppCompatActivity() {
 
         locationEngine.requestLocationUpdates(request,object : LocationEngineCallback<LocationEngineResult> {
             override fun onSuccess(result: LocationEngineResult?) {
-                //Toast.makeText(context,"User Location change : ${result!!.lastLocation!!.latitude} ${result.lastLocation!!.longitude}",Toast.LENGTH_SHORT).show()
+
+                // do something
+                // when user update location
+
+                user_location.text = "Lan ${result!!.lastLocation!!.latitude} Long ${result.lastLocation!!.longitude}"
             }
 
             override fun onFailure(exception: Exception) {
@@ -155,6 +177,18 @@ class MainActivity : AppCompatActivity() {
             }
 
         }, Looper.getMainLooper())
+
+        locationEngine.getLastLocation(object : LocationEngineCallback<LocationEngineResult> {
+            override fun onSuccess(result: LocationEngineResult?) {
+                mapboxMap.cameraPosition.target.latitude = result!!.lastLocation!!.latitude
+                mapboxMap.cameraPosition.target.longitude = result.lastLocation!!.longitude
+            }
+
+            override fun onFailure(exception: Exception) {
+
+            }
+
+        })
 
     }
 
@@ -183,6 +217,7 @@ class MainActivity : AppCompatActivity() {
             locationComponent.setRenderMode(RenderMode.COMPASS)
             locationComponent.addOnLocationClickListener(onLocationClick)
             locationComponent.addOnCameraTrackingChangedListener(onOnCameraTrackingChanged)
+            mapboxMap.setMaxZoomPreference(16.0)
 
             getCurrentLocation.setOnClickListener{
                 if (!isInTrackingMode) {
